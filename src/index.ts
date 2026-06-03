@@ -7,6 +7,14 @@ import { upload } from "./upload.js";
 
 const app = express();
 
+pool.query("SELECT NOW()")
+  .then(() => {
+    console.log("✅ PostgreSQL connecté");
+  })
+  .catch((err) => {
+    console.error("❌ Erreur PostgreSQL :", err);
+  });
+
 app.use(cors());
 
 const PORT = process.env.PORT || 3001;
