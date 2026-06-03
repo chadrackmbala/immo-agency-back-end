@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import express from "express";
 import { pool } from "./db.js";
 import cors from "cors";
@@ -7,7 +9,7 @@ const app = express();
 
 app.use(cors());
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
@@ -111,7 +113,7 @@ app.post(
         (req.files as Express.Multer.File[]) || [];
 
       const imagePrincipale =
-        files.length > 0
+        files.length > 0 && files[0]
           ? `/uploads/${files[0].filename}`
           : null;
 
