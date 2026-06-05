@@ -4,6 +4,8 @@ import express from "express";
 import { pool } from "./db.js";
 import cors from "cors";
 import { upload } from "./upload.js";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 
@@ -77,10 +79,10 @@ app.get("/produits/:id", async (req, res) => {
 
     const imagesResult = await pool.query(
       `
-      SELECT image
-      FROM images_produits
-      WHERE produit_id = $1
-      `,
+  SELECT id, image
+  FROM images_produits
+  WHERE produit_id = $1
+  `,
       [id]
     );
 
@@ -191,6 +193,50 @@ app.post(
   }
 );
 
+app.post(
+  "/produits/:id/images",
+  upload.array("images", 10),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const files =
+        (req.files as Express.Multer.File[]) || [];
+
+      for (const file of files) {
+        await pool.query(
+          `
+          INSERT INTO images_produits
+          (
+            produit_id,
+            image
+          )
+          VALUES
+          (
+            $1,
+            $2
+          )
+          `,
+          [
+            id,
+            `/uploads/${file.filename}`,
+          ]
+        );
+      }
+
+      res.status(201).json({
+        message: "Images ajoutées",
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        message: "Erreur serveur",
+      });
+    }
+  }
+);
+
 /**
  * UPDATE PRODUIT
  */
@@ -280,6 +326,65 @@ app.delete("/produits/:id", async (req, res) => {
     });
   }
 });
+
+app.delete(
+  "/produits/images/:imageId",
+  async (req, res) => {
+    try {
+      const { imageId } = req.params;
+
+      const imageResult =
+        await pool.query(
+          `
+          SELECT *
+          FROM images_produits
+          WHERE id = $1
+          `,
+          [imageId]
+        );
+
+      if (
+        imageResult.rows.length === 0
+      ) {
+        return res.status(404).json({
+          message: "Image introuvable",
+        });
+      }
+
+      const image =
+        imageResult.rows[0];
+
+      const filePath = path.join(
+        process.cwd(),
+        "src",
+        image.image
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      await pool.query(
+        `
+        DELETE FROM images_produits
+        WHERE id = $1
+        `,
+        [imageId]
+      );
+
+      res.status(200).json({
+        message:
+          "Image supprimée",
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        message: "Erreur serveur",
+      });
+    }
+  }
+);
 
 app.listen(PORT, () => {
   console.log("🚀 VERSION DEBUG");

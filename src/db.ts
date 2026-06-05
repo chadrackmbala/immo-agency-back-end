@@ -8,11 +8,17 @@
 //   port: 5432,
 // });
 
+// import { Pool } from "pg";
+
+// export const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: {
+//     rejectUnauthorized: false,
+//   },
+// });
+
 import { Pool } from "pg";
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
 });
